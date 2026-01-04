@@ -23,7 +23,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role',
-                  'current_balance', 'total_points', 'level', 'avatar', 'date_joined']
+                  'current_balance', 'total_points', 'level', 'avatar']
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                # این خط آدرس را از /media/... به http://127.0.0.1:8000/media/... تبدیل می‌کند
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
 
 
 # ۳. سریالایزر ساخت و ویرایش کاربر (حل مشکل رمز عبور)

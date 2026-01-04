@@ -7,12 +7,13 @@ class User(AbstractUser):
         ('ADMIN', 'مدیر'),
         ('EMPLOYEE', 'کارمند'),
     )
+    # اصلاح خطای سینتکسی: choices فقط یک بار نوشته شود
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='EMPLOYEE')
 
     # سیستم لول و امتیاز
     level = models.PositiveIntegerField(default=1)
-    total_points = models.PositiveIntegerField(default=0)  # امتیاز کل (برای لیدربرد)
-    current_balance = models.PositiveIntegerField(default=0)  # موجودی قابل خرج (کیف پول)
+    total_points = models.PositiveIntegerField(default=0)
+    current_balance = models.PositiveIntegerField(default=0)
 
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     telegram_chat_id = models.CharField(max_length=100, blank=True, null=True)
@@ -20,12 +21,27 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
 
-    # متدی برای محاسبه و ارتقای لول (فرض: هر 500 امتیاز = 1 لول)
+    # متد محاسبه لول بر اساس بازه‌های پیشنهادی جدید
     def update_level(self):
-        new_level = (self.total_points // 500) + 1
-        if new_level != self.level:
+        points = self.total_points
+        if points < 500:
+            new_level = 1
+        elif points < 1500:
+            new_level = 2
+        elif points < 2500:
+            new_level = 3
+        elif points < 4000:
+            new_level = 4
+        else:
+            new_level = 5
+
+        if self.level != new_level:
             self.level = new_level
-            self.save()
+
+    # متد save برای آپدیت خودکار لول قبل از ذخیره در دیتابیس
+    def save(self, *args, **kwargs):
+        self.update_level()
+        super().save(*args, **kwargs)
 
 
 class Message(models.Model):
